@@ -4041,40 +4041,51 @@ game:GetService("UserInputService").InputBegan:Connect(function(Key,GP)
     end
 end)
 
-function Silent()
-    if silent.on and silent.target ~= nil then 
-        local Character = silent.target.Character
-        local TargetCF = CFrame.new(silent.cf)
-        local Prediction
-local partslist= {
-         Character.Head,
-         Character.UpperTorso,
-         Character.LowerTorso,
-         Character.LeftUpperArm,
-         Character.LeftLowerArm,
-         Character.LeftHand,
-         Character.RightUpperArm,
-         Character.RightLowerArm,
-         Character.RightHand,
-         Character.LeftUpperLeg,
-         Character.LeftLowerLeg,
-         Character.LeftFoot,
-         Character.RightUpperLeg,
-         Character.RightLowerLeg,
-         Character.RightFoot
-}
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local Mouse = LocalPlayer:GetMouse()
 
-        
-        local randomRootPart = partslist[math.random(1, #partslist)]
-        
-        if randomRootPart and randomRootPart:IsA("BasePart") then
-            if randomRootPart.Velocity.Y < -20 then 
-                Prediction = TargetCF.Position + Vector3.new(randomRootPart.Velocity.X, (randomRootPart.Velocity.Y * 0.3), randomRootPart.Velocity.Z) * silent.pred
-            else
-                Prediction = TargetCF.Position + randomRootPart.Velocity * silent.pred
+function Silent()
+    if silent.on and silent.target ~= nil then
+        local Character = silent.target.Character
+        if not Character then return end
+
+        local mousePos = Mouse.Hit.Position
+        local closestPart = nil
+        local closestDist = math.huge
+
+        local partslist = {
+            "Head","UpperTorso","LowerTorso",
+            "LeftUpperArm","LeftLowerArm","LeftHand",
+            "RightUpperArm","RightLowerArm","RightHand",
+            "LeftUpperLeg","LeftLowerLeg","LeftFoot",
+            "RightUpperLeg","RightLowerLeg","RightFoot"
+        }
+
+        for _, partName in ipairs(partslist) do
+            local part = Character:FindFirstChild(partName)
+            if part and part:IsA("BasePart") then
+                local dist = (part.Position - mousePos).Magnitude
+                if dist < closestDist then
+                    closestDist = dist
+                    closestPart = part
+                end
             end
         end
-        MainEvent():FireServer("MOUSE",Prediction)
+
+        if not closestPart then return end
+
+        local vel = closestPart.Velocity
+        local Prediction
+
+        if vel.Y < -20 then
+            Prediction = closestPart.Position +
+                Vector3.new(vel.X, vel.Y * 0.3, vel.Z) * silent.pred
+        else
+            Prediction = closestPart.Position + vel * silent.pred
+        end
+
+        MainEvent():FireServer("MOUSE", Prediction)
     end
 end
 
